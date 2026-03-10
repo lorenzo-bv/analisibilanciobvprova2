@@ -1,0 +1,1027 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BertiVettori – Analisi di Bilancio</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+:root{--navy:#1B3A6B;--navy-mid:#244d8a;--navy-light:#2a5298;--navy-pale:#e8eef7;--navy-pale2:#f0f4fb;--gold:#C9A96E;--gold-light:#e8d5b0;--gold-pale:#fdf8f0;--white:#ffffff;--gray-light:#f4f5f8;--gray-mid:#8a9ab5;--gray-dark:#4a5568;--text:#1a1a2e;--border:#d0dae8;--green:#2e7d32;--green-bg:#e8f5e9;--red:#c62828;--red-bg:#ffebee;--amber:#e65100;--amber-bg:#fff3e0;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Montserrat',sans-serif;background:var(--gray-light);color:var(--text);}
+header{background:var(--navy);position:sticky;top:0;z-index:200;box-shadow:0 2px 24px rgba(27,58,107,.35);}
+.hdr{display:flex;align-items:center;justify-content:space-between;padding:14px 48px;}
+.logo-wrap{display:flex;align-items:center;gap:16px;}
+.bv-box{width:46px;height:46px;border:2px solid var(--gold);display:flex;align-items:center;justify-content:center;position:relative;}
+.bv-box::before,.bv-box::after{content:'';position:absolute;width:10px;height:10px;}
+.bv-box::before{top:-5px;left:-5px;border-top:2px solid var(--gold);border-left:2px solid var(--gold);}
+.bv-box::after{bottom:-5px;right:-5px;border-bottom:2px solid var(--gold);border-right:2px solid var(--gold);}
+.bv-letters{font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:#fff;letter-spacing:2px;}
+.bv-name h1{font-family:'Playfair Display',serif;color:#fff;font-size:19px;font-weight:600;letter-spacing:1px;}
+.bv-name p{font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--gold);margin-top:2px;}
+.hdr-right{font-size:10px;color:rgba(255,255,255,.45);letter-spacing:2px;text-transform:uppercase;}
+.setup-panel{max-width:900px;margin:48px auto;padding:0 24px;}
+.setup-card{background:var(--white);border:1px solid var(--border);border-top:4px solid var(--navy);padding:48px;}
+.setup-card h2{font-family:'Playfair Display',serif;font-size:30px;color:var(--navy);margin-bottom:6px;}
+.setup-card>p{color:var(--gray-mid);font-size:13px;margin-bottom:36px;letter-spacing:.5px;}
+.setup-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:28px;}
+.form-group label{display:block;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gray-mid);margin-bottom:8px;font-weight:600;}
+.form-group input,.form-group select{width:100%;padding:11px 14px;border:1.5px solid var(--border);background:var(--white);font-family:'Montserrat',sans-serif;font-size:13px;color:var(--text);outline:none;transition:border .2s;appearance:none;}
+.form-group input:focus,.form-group select:focus{border-color:var(--navy);}
+.form-group.full{grid-column:1/-1;}
+.apikey-box{background:var(--navy-pale2);border:1.5px solid var(--navy-pale);border-left:4px solid var(--navy);padding:20px 24px;margin-bottom:28px;}
+.apikey-box h4{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--navy);margin-bottom:6px;font-weight:700;}
+.apikey-box p{font-size:12px;color:var(--gray-dark);margin-bottom:14px;line-height:1.6;}
+.apikey-box a{color:var(--navy);font-weight:600;}
+.apikey-row{display:flex;gap:10px;align-items:center;}
+.apikey-row input{flex:1;padding:10px 14px;border:1.5px solid var(--border);font-family:'Montserrat',sans-serif;font-size:13px;color:var(--text);outline:none;transition:border .2s;background:white;}
+.apikey-row input:focus{border-color:var(--navy);}
+.apikey-row button{padding:10px 16px;background:transparent;border:1.5px solid var(--border);color:var(--gray-dark);font-family:'Montserrat',sans-serif;font-size:12px;cursor:pointer;white-space:nowrap;transition:all .2s;}
+.apikey-row button:hover{border-color:var(--navy);color:var(--navy);}
+.apikey-status{margin-top:10px;font-size:11px;}
+.apikey-status.ok{color:var(--green);}
+.apikey-status.err{color:var(--red);}
+.upload-zone{border:2px dashed var(--border);padding:40px 32px;text-align:center;cursor:pointer;transition:all .25s;background:var(--gray-light);margin-bottom:28px;}
+.upload-zone:hover,.upload-zone.drag-over{border-color:var(--navy);background:var(--navy-pale2);}
+.upload-zone .icon{font-size:44px;display:block;margin-bottom:12px;}
+.upload-zone h3{font-family:'Playfair Display',serif;color:var(--navy);font-size:17px;margin-bottom:6px;}
+.upload-zone p{font-size:12px;color:var(--gray-mid);margin-bottom:18px;}
+#fileInput{display:none;}
+.file-chosen{margin-top:12px;font-size:12px;color:var(--green);font-weight:500;}
+.btn{border:none;cursor:pointer;font-family:'Montserrat',sans-serif;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;transition:all .2s;}
+.btn-navy{background:var(--navy);color:#fff;padding:14px 36px;font-size:12px;}
+.btn-navy:hover{background:var(--navy-light);}
+.btn-navy:disabled{opacity:.5;cursor:not-allowed;}
+.btn-outline{background:transparent;color:var(--navy);border:1.5px solid var(--navy);padding:11px 24px;font-size:11px;}
+.btn-outline:hover{background:var(--navy);color:#fff;}
+.error-bar{background:var(--red-bg);border:1px solid #ffcdd2;color:var(--red);padding:12px 18px;font-size:12px;margin-top:16px;display:none;}
+.loading-wrap{display:none;max-width:500px;margin:80px auto;padding:0 24px;text-align:center;}
+.spinner{width:56px;height:56px;border:3px solid var(--navy-pale);border-top:3px solid var(--navy);border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 24px;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.loading-wrap h3{font-family:'Playfair Display',serif;font-size:22px;color:var(--navy);margin-bottom:6px;}
+.loading-wrap p{color:var(--gray-mid);font-size:13px;margin-bottom:28px;}
+.steps{display:flex;flex-direction:column;gap:8px;text-align:left;}
+.step{display:flex;align-items:center;gap:12px;font-size:12px;color:var(--gray-mid);padding:9px 14px;background:var(--white);border:1px solid var(--border);}
+.step.active{color:var(--navy);font-weight:500;border-color:var(--navy);}
+.step.done{color:var(--green);border-color:#c8e6c9;background:var(--green-bg);}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--border);flex-shrink:0;}
+.step.active .dot{background:var(--navy);}
+.step.done .dot{background:var(--green);}
+#reportSection{display:none;}
+.report-wrap{max-width:1100px;margin:0 auto;padding:32px 24px;}
+.actions-bar{background:var(--white);border:1px solid var(--border);padding:14px 32px;display:flex;gap:12px;align-items:center;margin-bottom:20px;}
+.actions-bar .spacer{margin-left:auto;font-size:11px;color:var(--gray-mid);}
+#rc{background:var(--white);}
+.cover{background:var(--navy);padding:56px 56px 48px;display:flex;justify-content:space-between;align-items:flex-end;}
+.cover-left .eyebrow{font-size:10px;letter-spacing:3px;color:rgba(255,255,255,.45);text-transform:uppercase;margin-bottom:12px;}
+.cover-left h1{font-family:'Playfair Display',serif;color:#fff;font-size:34px;margin-bottom:4px;}
+.cover-left .client{font-family:'Cormorant Garamond',serif;font-style:italic;color:var(--gold);font-size:20px;margin-bottom:2px;}
+.cover-left .sector{font-size:11px;color:rgba(255,255,255,.5);letter-spacing:1.5px;margin-top:6px;}
+.cover-right{text-align:right;}
+.cover-right .year-badge{display:inline-block;border:1.5px solid var(--gold);padding:8px 20px;font-family:'Playfair Display',serif;font-size:22px;color:var(--gold);letter-spacing:2px;margin-bottom:10px;}
+.cover-right p{font-size:10px;color:rgba(255,255,255,.4);letter-spacing:1px;}
+.sec-title{background:var(--navy-pale2);border-left:4px solid var(--navy);padding:12px 32px;margin:0;font-family:'Montserrat',sans-serif;font-size:10px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--navy);}
+.semaphore-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:0;border-bottom:1px solid var(--border);}
+.sem-item{padding:22px 20px;border-right:1px solid var(--border);display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px;}
+.sem-item:last-child{border-right:none;}
+.sem-dot{width:18px;height:18px;border-radius:50%;flex-shrink:0;}
+.sem-dot.green{background:var(--green);box-shadow:0 0 8px rgba(46,125,50,.4);}
+.sem-dot.amber{background:#f59e0b;box-shadow:0 0 8px rgba(245,158,11,.4);}
+.sem-dot.red{background:var(--red);box-shadow:0 0 8px rgba(198,40,40,.4);}
+.sem-label{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--gray-mid);}
+.sem-value{font-family:'Playfair Display',serif;font-size:20px;color:var(--navy);}
+.sem-note{font-size:10px;color:var(--gray-mid);}
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:0;border-bottom:1px solid var(--border);}
+.kpi-cell{padding:22px 24px;border-right:1px solid var(--border);position:relative;overflow:hidden;}
+.kpi-cell:last-child{border-right:none;}
+.kpi-cell::after{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
+.kpi-cell.pos::after{background:var(--green);}
+.kpi-cell.neg::after{background:var(--red);}
+.kpi-cell.warn::after{background:var(--gold);}
+.kpi-lbl{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--gray-mid);margin-bottom:6px;}
+.kpi-val{font-family:'Playfair Display',serif;font-size:26px;color:var(--navy);margin-bottom:3px;}
+.kpi-delta{font-size:11px;}
+.kpi-delta.up{color:var(--green);}
+.kpi-delta.dn{color:var(--red);}
+.two-col{display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid var(--border);}
+.panel{padding:28px;border-right:1px solid var(--border);}
+.panel:last-child{border-right:none;}
+.panel h3{font-family:'Playfair Display',serif;font-size:15px;color:var(--navy);margin-bottom:18px;padding-bottom:10px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;}
+.panel-full{padding:28px 32px;border-bottom:1px solid var(--border);}
+.panel-full h3{font-family:'Playfair Display',serif;font-size:15px;color:var(--navy);margin-bottom:18px;padding-bottom:10px;border-bottom:1px solid var(--border);}
+.ricl-table{width:100%;border-collapse:collapse;font-size:12px;}
+.ricl-table tr td{padding:7px 10px;border-bottom:1px solid var(--border);}
+.ricl-table .cat{font-weight:600;color:var(--navy);background:var(--navy-pale2);}
+.ricl-table .sub{padding-left:22px;color:var(--gray-dark);}
+.ricl-table .tot{font-weight:700;background:var(--navy);color:#fff;}
+.ricl-table .tot td{border:none;}
+.ricl-table td:not(:first-child){text-align:right;}
+.va-table{width:100%;border-collapse:collapse;font-size:12px;}
+.va-table tr td{padding:7px 10px;border-bottom:1px solid var(--border);}
+.va-table .step-row{background:var(--navy);color:#fff;font-weight:700;}
+.va-table .step-row td{border:none;}
+.va-table .indent{padding-left:22px;color:var(--gray-dark);}
+.va-table td:not(:first-child){text-align:right;}
+.chart-wrap{position:relative;height:220px;}
+.chart-wrap-tall{position:relative;height:280px;}
+.idx-table{width:100%;border-collapse:collapse;font-size:12px;}
+.idx-table thead th{background:var(--navy);color:#fff;padding:9px 12px;font-size:10px;letter-spacing:1px;text-transform:uppercase;text-align:left;font-weight:500;}
+.idx-table tbody tr:nth-child(even){background:var(--gray-light);}
+.idx-table tbody tr:hover{background:var(--navy-pale2);}
+.idx-table td{padding:9px 12px;border-bottom:1px solid var(--border);vertical-align:middle;}
+.idx-name{font-weight:600;color:var(--navy);font-size:12px;}
+.idx-desc{font-size:10px;color:var(--gray-mid);margin-top:2px;}
+.num-cell{text-align:right;font-family:'Playfair Display',serif;font-size:15px;font-weight:600;}
+.num-prev{text-align:right;color:var(--gray-mid);font-size:12px;}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;font-size:10px;font-weight:700;border-radius:2px;}
+.badge.g{background:var(--green-bg);color:var(--green);}
+.badge.a{background:var(--amber-bg);color:var(--amber);}
+.badge.r{background:var(--red-bg);color:var(--red);}
+.fe-btn{background:none;border:none;color:var(--navy);font-size:10px;cursor:pointer;font-family:'Montserrat',sans-serif;text-decoration:underline;padding:0;}
+.fe-body{display:none;margin-top:8px;background:var(--gray-light);border:1px solid var(--border);padding:10px 14px;}
+.fe-body.open{display:block;}
+.fe-body .f{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:13px;color:var(--navy);margin-bottom:4px;}
+.fe-body .ex{font-size:11px;color:var(--gray-dark);line-height:1.6;}
+.sector-note{font-size:10px;color:var(--gold);font-weight:600;margin-top:4px;}
+.bench-bar{height:4px;background:var(--border);border-radius:2px;margin-top:6px;position:relative;}
+.bench-fill{height:4px;border-radius:2px;position:absolute;top:0;left:0;}
+.chart-note{font-size:10px;color:var(--gray-mid);margin-top:8px;text-align:center;font-style:italic;}
+.comment-block{border:2px solid var(--gold);background:var(--gold-pale);overflow:hidden;}
+.comment-header{background:var(--gold);padding:10px 20px;}
+.comment-header span{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#fff;font-weight:700;}
+.comment-body{padding:20px;}
+.comment-body textarea{width:100%;min-height:140px;border:none;background:transparent;font-family:'Cormorant Garamond',serif;font-size:17px;line-height:1.75;color:var(--text);resize:vertical;outline:none;}
+.three-col{display:grid;grid-template-columns:repeat(3,1fr);border-bottom:1px solid var(--border);}
+.panel-sm{padding:20px 22px;border-right:1px solid var(--border);}
+.panel-sm:last-child{border-right:none;}
+.panel-sm h3{font-family:'Cormorant Garamond',serif;font-size:14px;color:var(--navy);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border);}
+.assetti-card{background:var(--light-bg);border:1px solid var(--border);padding:14px 16px;border-top:3px solid var(--navy);}
+.assetti-card.ok{border-top-color:#2e7d32;}
+.assetti-card.warn{border-top-color:#f59e0b;}
+.assetti-card.crit{border-top-color:#c62828;}
+.assetti-title{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--navy);margin-bottom:6px;}
+.assetti-val{font-family:'Cormorant Garamond',serif;font-size:18px;color:var(--navy);margin-bottom:4px;}
+.assetti-note{font-size:10px;color:var(--gray-mid);line-height:1.5;}
+.comment-hint{font-size:10px;color:var(--gold);letter-spacing:1px;margin-top:8px;}
+.report-foot{background:var(--navy);padding:18px 40px;display:flex;justify-content:space-between;align-items:center;}
+.report-foot .brand{font-family:'Playfair Display',serif;color:var(--gold);font-size:15px;}
+.report-foot p{font-size:10px;color:rgba(255,255,255,.4);}
+.sector-chip{display:inline-block;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);padding:4px 12px;font-size:10px;letter-spacing:1.5px;color:rgba(255,255,255,.7);text-transform:uppercase;margin-top:8px;}
+@media print{header,.actions-bar{display:none!important;}#reportSection{display:block!important;}.report-wrap{padding:0;max-width:100%;}body{background:#fff;}}
+</style>
+</head>
+<body>
+<header>
+  <div class="hdr">
+    <div class="logo-wrap">
+      <div class="bv-box"><span class="bv-letters">BV</span></div>
+      <div class="bv-name"><h1>BertiVettori</h1><p>Tax &amp; Legal SRL STP</p></div>
+    </div>
+    <div class="hdr-right">Analisi di Bilancio — Uso Interno</div>
+  </div>
+</header>
+
+<div id="setupPanel" class="setup-panel">
+  <div class="setup-card">
+    <h2>Analisi di Bilancio</h2>
+    <p>Compila i dati del cliente, seleziona il settore ATECO per benchmark corretti, poi carica il PDF</p>
+
+    <div class="apikey-box">
+      <h4>&#128273; Google Gemini API Key — Gratuita</h4>
+      <p>
+        Questo strumento usa <strong>Google Gemini 2.5 Flash</strong> — gratuito fino a 1500 richieste/giorno, senza costi.<br>
+        Ottieni la tua chiave in 2 minuti: <a href="https://aistudio.google.com/app/apikey" target="_blank">aistudio.google.com/app/apikey</a> &#8594; clicca "Create API Key".
+      </p>
+      <div class="apikey-row">
+        <input type="password" id="geminiKey" placeholder="Incolla qui la tua API Key (AIza...)" oninput="checkReady()">
+        <button onclick="toggleKeyVis()">&#128065; Mostra</button>
+        <button onclick="testKey()">&#10003; Testa</button>
+      </div>
+      <div class="apikey-status" id="keyStatus"></div>
+    </div>
+
+    <div class="setup-grid">
+      <div class="form-group">
+        <label>Nome Cliente / Azienda</label>
+        <input type="text" id="inCliente" placeholder="es. Rossi Costruzioni Srl">
+      </div>
+      <div class="form-group">
+        <label>Codice Fiscale / P.IVA</label>
+        <input type="text" id="inPiva" placeholder="es. 01234567890">
+      </div>
+      <div class="form-group full">
+        <label>Settore ATECO — per benchmark indici</label>
+        <select id="inAteco">
+          <option value="">— Seleziona settore —</option>
+          <optgroup label="Manifatturiero">
+            <option value="manifatturiero_alimentare">Alimentare e bevande (CA)</option>
+            <option value="manifatturiero_tessile">Tessile e abbigliamento (CB-CC)</option>
+            <option value="manifatturiero_chimico">Chimico e farmaceutico (CE-CF)</option>
+            <option value="manifatturiero_metallurgia">Metallurgia e meccanica (CH-CJ)</option>
+            <option value="manifatturiero_generale">Manifatturiero generico</option>
+          </optgroup>
+          <optgroup label="Costruzioni e Immobiliare">
+            <option value="costruzioni">Costruzioni (F)</option>
+            <option value="immobiliare">Attivita immobiliare (L)</option>
+          </optgroup>
+          <optgroup label="Commercio">
+            <option value="commercio_ingrosso">Commercio all ingrosso (G46)</option>
+            <option value="commercio_dettaglio">Commercio al dettaglio (G47)</option>
+            <option value="autoveicoli">Autoveicoli e motocicli (G45)</option>
+          </optgroup>
+          <optgroup label="Servizi">
+            <option value="trasporti">Trasporti e logistica (H)</option>
+            <option value="ristorazione">Ristorazione e alloggio (I)</option>
+            <option value="ict">ICT e telecomunicazioni (J)</option>
+            <option value="finanza">Servizi finanziari (K)</option>
+            <option value="professionale">Attivita professionali e consulenza (M)</option>
+            <option value="supporto_imprese">Supporto alle imprese (N)</option>
+            <option value="sanita">Sanita (Q)</option>
+          </optgroup>
+          <optgroup label="Agricoltura ed Energia">
+            <option value="agricoltura">Agricoltura (A)</option>
+            <option value="energia">Energia e utilities (D-E)</option>
+          </optgroup>
+          <option value="generico">Generico / Non classificato</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="upload-zone" id="uploadZone">
+      <span class="icon">&#128196;</span>
+      <h3>Trascina il PDF del bilancio</h3>
+      <p>oppure clicca per selezionare il file</p>
+      <button class="btn btn-navy" onclick="document.getElementById('fileInput').click()">Seleziona PDF</button>
+      <input type="file" id="fileInput" accept=".pdf">
+      <div class="file-chosen" id="fileChosen" style="display:none"></div>
+    </div>
+
+    <div style="display:flex;gap:12px;align-items:center">
+      <button class="btn btn-navy" id="startBtn" onclick="startAnalysis()" disabled>Genera Report &#8594;</button>
+      <span style="font-size:11px;color:var(--gray-mid)">Inserisci API key, seleziona settore e PDF per procedere</span>
+    </div>
+    <div class="error-bar" id="errorBar"></div>
+  </div>
+</div>
+
+<div class="loading-wrap" id="loadingWrap">
+  <div class="spinner"></div>
+  <h3>Analisi in corso&#8230;</h3>
+  <p>Gemini sta elaborando il bilancio</p>
+  <div class="steps">
+    <div class="step active" id="s1"><div class="dot"></div><span>Lettura e interpretazione del PDF</span></div>
+    <div class="step" id="s2"><div class="dot"></div><span>Estrazione Stato Patrimoniale</span></div>
+    <div class="step" id="s3"><div class="dot"></div><span>Riclassificazione SP e CE a VA</span></div>
+    <div class="step" id="s4"><div class="dot"></div><span>Calcolo indici e benchmark settoriali</span></div>
+    <div class="step" id="s5"><div class="dot"></div><span>Generazione commento e composizione report</span></div>
+  </div>
+</div>
+
+<div id="reportSection">
+  <div class="report-wrap">
+    <div class="actions-bar">
+      <button class="btn btn-navy" onclick="resetApp()">&#8679; Nuovo bilancio</button>
+      <button class="btn btn-outline" onclick="downloadPDF()">&#8681; Scarica PDF</button>
+      <button class="btn btn-outline" onclick="window.print()">&#128424; Stampa</button>
+      <span class="spacer">Report generato il <span id="actionDate"></span></span>
+    </div>
+    <div id="rc">
+      <div class="cover">
+        <div class="cover-left">
+          <div class="eyebrow">Report di Analisi Finanziaria</div>
+          <h1>Analisi di Bilancio</h1>
+          <div class="client" id="rcCliente">&#8212;</div>
+          <div class="sector" id="rcSector">&#8212;</div>
+          <div class="sector-chip" id="rcPiva">&#8212;</div>
+        </div>
+        <div class="cover-right">
+          <div class="year-badge" id="rcYears">&#8212; / &#8212;</div>
+          <p>Elaborato da BertiVettori</p>
+          <p style="margin-top:4px" id="rcDate">&#8212;</p>
+        </div>
+      </div>
+      <div class="sec-title">Executive Summary &#8212; Semaforo Sintetico</div>
+      <div class="semaphore-grid" id="semGrid"></div>
+      <div class="sec-title">Indicatori Chiave di Performance</div>
+      <div class="kpi-row" id="kpiRow"></div>
+      <div class="sec-title">Stato Patrimoniale Riclassificato &#8212; Criterio Finanziario</div>
+      <div class="two-col">
+        <div class="panel"><h3>&#128203; Attivo</h3><table class="ricl-table"><thead><tr><th></th><th id="spHdrAc" style="text-align:right;padding:6px 8px;background:var(--navy);color:#fff;font-size:10px">2024</th><th id="spHdrPr" style="text-align:right;padding:6px 8px;background:var(--navy);color:#fff;font-size:10px">2023</th></tr></thead><tbody id="spAttivoTable"></tbody></table></div>
+        <div class="panel"><h3>&#128203; Passivo e Patrimonio Netto</h3><table class="ricl-table"><thead><tr><th></th><th id="spHdrAc2" style="text-align:right;padding:6px 8px;background:var(--navy);color:#fff;font-size:10px">2024</th><th id="spHdrPr2" style="text-align:right;padding:6px 8px;background:var(--navy);color:#fff;font-size:10px">2023</th></tr></thead><tbody id="spPassivoTable"></tbody></table></div>
+      </div>
+      <div class="sec-title">Conto Economico Riclassificato &#8212; Metodo del Valore Aggiunto</div>
+      <div class="two-col">
+        <div class="panel"><h3 id="ceHdrAc">&#128202; Anno Corrente</h3><table class="va-table" id="ceAcTable"></table></div>
+        <div class="panel"><h3 id="ceHdrPr">&#128202; Anno Precedente</h3><table class="va-table" id="cePrecTable"></table></div>
+      </div>
+      <div class="sec-title">Analisi Grafica &#8212; Struttura e Redditivita</div>
+      <div class="two-col">
+        <div class="panel"><h3>&#128202; Struttura Patrimoniale Confronto</h3><div class="chart-wrap"><canvas id="chSP"></canvas></div></div>
+        <div class="panel"><h3>&#128200; Cascata del Valore &#8212; Confronto Anni</h3><div class="chart-wrap"><canvas id="chVA"></canvas></div></div>
+      </div>
+      <div class="sec-title">Indici di Bilancio &#8212; Analisi Dettagliata con Benchmark Settoriale</div>
+      <div class="panel-full">
+        <div id="sectorBadge" style="margin-bottom:16px;font-size:11px;color:var(--gray-mid)"></div>
+        <table class="idx-table">
+          <thead><tr>
+            <th style="width:220px">Indice</th><th>Formula</th>
+            <th style="text-align:right;width:100px">Anno Corr.</th>
+            <th style="text-align:right;width:100px">Anno Prec.</th>
+            <th style="width:80px">Var.</th>
+            <th style="width:120px">Benchmark</th>
+            <th style="width:110px">Valutazione</th>
+          </tr></thead>
+          <tbody id="idxBody"></tbody>
+        </table>
+        <p style="font-size:10px;color:var(--gray-mid);margin-top:12px;font-style:italic">&#9733; Benchmark di riferimento settoriale elaborati su dati Cerved, Banca d\'Italia (Centrale dei Rischi) e CRIBIS D&B. Valori mediani/medi per classe dimensionale PMI. Aggiornamento: 2023-2024.</p>
+      </div>
+      <div class="sec-title">Analisi della Struttura Finanziaria</div>
+      <div class="three-col">
+        <div class="panel-sm">
+          <h3>&#127981; Posizione Finanziaria Netta</h3>
+          <table class="ricl-table"><tbody id="pfnTable"></tbody></table>
+        </div>
+        <div class="panel-sm">
+          <h3>&#9888; Indicatori Crisi d'Impresa</h3>
+          <table class="ricl-table"><tbody id="crisiTable"></tbody></table>
+          <p style="font-size:9px;color:var(--gray-mid);margin-top:8px;font-style:italic">Rif. D.Lgs. 14/2019 art. 3 &#8212; CNDCEC 2023</p>
+        </div>
+        <div class="panel-sm">
+          <h3>&#128200; Andamento Patrimonio Netto</h3>
+          <div class="chart-wrap"><canvas id="chPN"></canvas></div>
+        </div>
+      </div>
+
+      <div class="sec-title">Analisi della Redditivita</div>
+      <div class="two-col">
+        <div class="panel">
+          <h3>&#128201; Margini Reddituali Confronto</h3>
+          <div class="chart-wrap"><canvas id="chMargini"></canvas></div>
+        </div>
+        <div class="panel">
+          <h3>&#128203; Composizione Costi Operativi</h3>
+          <div class="chart-wrap"><canvas id="chCosti"></canvas></div>
+        </div>
+      </div>
+
+      <div class="sec-title">Adeguati Assetti Organizzativi &#8212; art. 2086 c.c.</div>
+      <div class="panel-full">
+        <div id="assetti-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px"></div>
+        <p style="font-size:10px;color:var(--gray-mid);font-style:italic">&#9733; Valutazione basata sugli indicatori quantitativi previsti dal Codice della Crisi d'Impresa (D.Lgs. 14/2019) e dalle Linee Guida CNDCEC/CCSAF 2023. Non sostituisce una valutazione legale professionale.</p>
+      </div>
+
+            <div class="sec-title">Osservazioni del Commercialista</div>
+      <div class="panel-full" style="border-bottom:1px solid var(--border)">
+        <div class="comment-block">
+          <div class="comment-header"><span>&#10022; Note professionali &#8212; a cura del commercialista</span></div>
+          <div class="comment-body">
+            <textarea id="noteCommercialista" placeholder="Inserire qui le osservazioni professionali&#8230;"></textarea>
+            <div class="comment-hint">&#9998; Campo editabile &#8212; il testo viene incluso nel PDF</div>
+          </div>
+        </div>
+      </div>
+      <div class="report-foot">
+        <div><div class="brand">BertiVettori</div><p style="margin-top:4px">Tax &amp; Legal SRL STP &#8212; Documento riservato ad uso interno professionale</p></div>
+        <p id="rcFootDate">&#8212;</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const BENCHMARKS={
+  default:{roi:[3,6],roe:[5,10],ros:[2,5],cr:[1.2,1.8],de:[1.5,2.5],lev:[2,3],dscr:[1.1,1.5],pfnebitda:[3,5],rotcred:[60,90],rotdeb:[60,90]},
+  manifatturiero_alimentare:{roi:[4,8],roe:[6,12],ros:[3,6],cr:[1.3,2],de:[1,2],lev:[2,3],dscr:[1.2,1.6],pfnebitda:[2.5,4],rotcred:[45,75],rotdeb:[55,80]},
+  manifatturiero_tessile:{roi:[3,7],roe:[5,10],ros:[2,5],cr:[1.2,1.8],de:[1.2,2.2],lev:[2,3],dscr:[1.1,1.4],pfnebitda:[3,5],rotcred:[50,80],rotdeb:[60,90]},
+  manifatturiero_chimico:{roi:[5,10],roe:[8,14],ros:[5,10],cr:[1.5,2.2],de:[0.8,1.8],lev:[1.8,2.8],dscr:[1.3,1.8],pfnebitda:[2,3.5],rotcred:[45,70],rotdeb:[50,75]},
+  manifatturiero_metallurgia:{roi:[4,8],roe:[6,11],ros:[3,6],cr:[1.2,1.9],de:[1.2,2.2],lev:[2,3],dscr:[1.1,1.5],pfnebitda:[3,5],rotcred:[50,80],rotdeb:[60,90]},
+  manifatturiero_generale:{roi:[4,7],roe:[6,11],ros:[3,6],cr:[1.3,2],de:[1,2],lev:[2,3],dscr:[1.1,1.5],pfnebitda:[3,5],rotcred:[50,80],rotdeb:[60,90]},
+  costruzioni:{roi:[2,5],roe:[4,9],ros:[2,4],cr:[1.1,1.7],de:[2,3.5],lev:[2.5,4],dscr:[1,1.3],pfnebitda:[4,7],rotcred:[80,120],rotdeb:[80,120]},
+  immobiliare:{roi:[2,4],roe:[3,7],ros:[10,25],cr:[0.8,1.5],de:[2,4],lev:[3,5],dscr:[1,1.3],pfnebitda:[5,10],rotcred:[60,90],rotdeb:[60,90]},
+  commercio_ingrosso:{roi:[3,6],roe:[5,10],ros:[1,3],cr:[1.3,2],de:[1.5,2.5],lev:[2,3.5],dscr:[1.1,1.5],pfnebitda:[3,5],rotcred:[40,65],rotdeb:[40,65]},
+  commercio_dettaglio:{roi:[4,8],roe:[6,12],ros:[2,5],cr:[0.9,1.6],de:[1.5,2.5],lev:[2,3.5],dscr:[1.1,1.5],pfnebitda:[2.5,4],rotcred:[10,30],rotdeb:[30,60]},
+  autoveicoli:{roi:[3,6],roe:[5,10],ros:[1,3],cr:[1.1,1.7],de:[2,3],lev:[2.5,4],dscr:[1.1,1.4],pfnebitda:[3,5],rotcred:[30,60],rotdeb:[30,60]},
+  trasporti:{roi:[3,6],roe:[5,10],ros:[3,6],cr:[1.1,1.7],de:[1.5,2.5],lev:[2,3.5],dscr:[1.1,1.5],pfnebitda:[3,5],rotcred:[45,75],rotdeb:[45,75]},
+  ristorazione:{roi:[4,9],roe:[7,14],ros:[5,12],cr:[0.7,1.3],de:[2,3.5],lev:[2.5,4],dscr:[1.1,1.5],pfnebitda:[2,4],rotcred:[5,20],rotdeb:[30,60]},
+  ict:{roi:[6,12],roe:[10,18],ros:[8,15],cr:[1.5,2.5],de:[0.5,1.5],lev:[1.5,2.5],dscr:[1.3,1.8],pfnebitda:[2,4],rotcred:[45,75],rotdeb:[45,75]},
+  finanza:{roi:[3,7],roe:[8,15],ros:[15,30],cr:[1,1.5],de:[2,5],lev:[3,6],dscr:[1.1,1.5],pfnebitda:[3,6],rotcred:[30,60],rotdeb:[30,60]},
+  professionale:{roi:[5,12],roe:[10,20],ros:[8,18],cr:[1.3,2],de:[0.5,1.5],lev:[1.5,2.5],dscr:[1.2,1.7],pfnebitda:[2,4],rotcred:[60,90],rotdeb:[45,75]},
+  supporto_imprese:{roi:[4,9],roe:[7,14],ros:[5,12],cr:[1.2,1.8],de:[1,2],lev:[2,3],dscr:[1.1,1.5],pfnebitda:[2.5,4.5],rotcred:[45,75],rotdeb:[45,75]},
+  sanita:{roi:[3,7],roe:[5,12],ros:[4,9],cr:[1.2,1.9],de:[1,2],lev:[2,3],dscr:[1.1,1.5],pfnebitda:[3,5],rotcred:[60,90],rotdeb:[45,75]},
+  agricoltura:{roi:[2,5],roe:[3,8],ros:[3,7],cr:[1.1,1.8],de:[1.5,2.5],lev:[2,3],dscr:[1,1.3],pfnebitda:[4,7],rotcred:[60,90],rotdeb:[60,90]},
+  energia:{roi:[4,8],roe:[6,12],ros:[8,16],cr:[1.2,1.9],de:[1,2],lev:[2,3.5],dscr:[1.2,1.6],pfnebitda:[3,5],rotcred:[45,75],rotdeb:[45,75]},
+  generico:{roi:[3,6],roe:[5,10],ros:[2,5],cr:[1.2,1.8],de:[1.5,2.5],lev:[2,3],dscr:[1.1,1.5],pfnebitda:[3,5],rotcred:[60,90],rotdeb:[60,90]}
+};
+const SECTOR_LABELS={
+  manifatturiero_alimentare:'Alimentare e Bevande',manifatturiero_tessile:'Tessile/Abbigliamento',
+  manifatturiero_chimico:'Chimico/Farmaceutico',manifatturiero_metallurgia:'Metallurgia/Meccanica',
+  manifatturiero_generale:'Manifatturiero',costruzioni:'Costruzioni',immobiliare:'Immobiliare',
+  commercio_ingrosso:'Commercio Ingrosso',commercio_dettaglio:'Commercio Dettaglio',
+  autoveicoli:'Autoveicoli',trasporti:'Trasporti/Logistica',ristorazione:'Ristorazione/Alloggio',
+  ict:'ICT/Telecomunicazioni',finanza:'Servizi Finanziari',professionale:'Professionale/Consulenza',
+  supporto_imprese:'Supporto Imprese',sanita:'Sanita',agricoltura:'Agricoltura',
+  energia:'Energia/Utilities',generico:'Generico'
+};
+
+let selectedFile=null,selectedSector='',charts={};
+const fileInput=document.getElementById('fileInput');
+const uploadZone=document.getElementById('uploadZone');
+const startBtn=document.getElementById('startBtn');
+
+uploadZone.addEventListener('dragover',e=>{e.preventDefault();uploadZone.classList.add('drag-over');});
+uploadZone.addEventListener('dragleave',()=>uploadZone.classList.remove('drag-over'));
+uploadZone.addEventListener('drop',e=>{e.preventDefault();uploadZone.classList.remove('drag-over');handleFile(e.dataTransfer.files[0]);});
+fileInput.addEventListener('change',e=>handleFile(e.target.files[0]));
+document.getElementById('inAteco').addEventListener('change',e=>{selectedSector=e.target.value;checkReady();});
+
+function handleFile(f){
+  if(!f||f.type!=='application/pdf'){showError('Carica un file PDF valido.');return;}
+  selectedFile=f;
+  document.getElementById('fileChosen').textContent='OK: '+f.name;
+  document.getElementById('fileChosen').style.display='block';
+  checkReady();
+}
+function checkReady(){
+  const key=document.getElementById('geminiKey').value.trim();
+  startBtn.disabled=!(selectedFile&&selectedSector&&key.startsWith('AIza'));
+}
+function toggleKeyVis(){
+  const el=document.getElementById('geminiKey');
+  el.type=el.type==='password'?'text':'password';
+}
+async function testKey(){
+  const key=document.getElementById('geminiKey').value.trim();
+  const st=document.getElementById('keyStatus');
+  if(!key){st.textContent='Inserisci una API key.';st.className='apikey-status err';return;}
+  st.textContent='Test in corso...';st.className='apikey-status';
+  try{
+    const r=await fetch('https://generativelanguage.googleapis.com/v1beta/models?key='+key);
+    if(r.ok){st.textContent='OK: API key valida - Gemini pronto';st.className='apikey-status ok';}
+    else{st.textContent='ERRORE: API key non valida ('+r.status+')';st.className='apikey-status err';}
+  }catch(e){st.textContent='Errore di rete: '+e.message;st.className='apikey-status err';}
+}
+function showError(msg){const el=document.getElementById('errorBar');el.textContent=msg;el.style.display='block';}
+
+let stepTimer;
+function animateSteps(){
+  let cur=0;
+  stepTimer=setInterval(()=>{
+    if(cur>0)document.getElementById('s'+cur).className='step done';
+    cur++;
+    if(cur<=5)document.getElementById('s'+cur).className='step active';
+    else clearInterval(stepTimer);
+  },2400);
+}
+
+function parseGeminiJSON(raw){
+  // 1. rimuovi markdown code blocks
+  let s=raw.replace(/```json\s*/gi,'').replace(/```\s*/g,'').trim();
+  // 2. estrai solo il primo blocco JSON { ... }
+  const start=s.indexOf('{');
+  const end=s.lastIndexOf('}');
+  if(start===-1){throw new Error('Risposta non inizia con JSON. Ricevuto:\n'+s.substring(0,300));}
+  if(end===-1){
+    // Risposta troncata: prova a riparare aggiungendo le parentesi mancanti
+    s=s.slice(start);
+    // conta parentesi aperte e chiuse
+    let open=0;
+    for(const c of s){if(c==='{')open++;else if(c==='}')open--;}
+    // aggiungi le parentesi mancanti
+    s=s+('}'.repeat(Math.max(0,open)));
+    // rimuovi trailing comma prima delle parentesi aggiunte
+    s=s.replace(/,\s*}/g,'}').replace(/,\s*]/g,']');
+  } else {
+    s=s.slice(start,end+1);
+  }
+  // 3. prova parsing diretto
+  try{return JSON.parse(s);}catch(e1){}
+  // 4. riparazione: rimuovi trailing commas prima di } o ]
+  s=s.replace(/,\s*([}\]])/g,'$1');
+  try{return JSON.parse(s);}catch(e2){}
+  // 5. rimuovi newline e caratteri di controllo dentro le stringhe
+  s=s.replace(/"([^"\\]*(\\.[^"\\]*)*)"/g,(m)=>m.replace(/\n/g,'\\n').replace(/\r/g,'').replace(/\t/g,' '));
+  try{return JSON.parse(s);}catch(e3){}
+  // 6. rimuovi commenti stile JS
+  s=s.replace(/\/\/[^\n]*/g,'').replace(/\/\*[\s\S]*?\*\//g,'');
+  try{return JSON.parse(s);}catch(e4){}
+  // 7. fallback: segnala l'errore con contesto utile
+  const pos=s.search(/[^,{\[\s]/);
+  throw new Error('JSON non valido. Risposta Gemini:\n'+s.substring(0,300)+'...');
+}
+
+
+async function startAnalysis(){
+  document.getElementById('errorBar').style.display='none';
+  document.getElementById('setupPanel').style.display='none';
+  document.getElementById('loadingWrap').style.display='block';
+  animateSteps();
+  const key=document.getElementById('geminiKey').value.trim();
+  const b64=await fileToBase64(selectedFile);
+  const bm=BENCHMARKS[selectedSector]||BENCHMARKS.default;
+  const sectorLabel=SECTOR_LABELS[selectedSector]||selectedSector;
+  const prompt=`Sei un commercialista italiano. Analizza il bilancio allegato ed estrai i dati nel JSON esatto qui sotto. Rispondi SOLO con il JSON, nessun testo aggiuntivo.
+
+{"cliente":"nome azienda","ac":2024,"pr":2023,"sp":{"immimm_ac":0,"immimm_pr":0,"immmat_ac":0,"immmat_pr":0,"immfin_ac":0,"immfin_pr":0,"rim_ac":0,"rim_pr":0,"cred_ac":0,"cred_pr":0,"liq_ac":0,"liq_pr":0,"altatt_ac":0,"altatt_pr":0,"totatt_ac":0,"totatt_pr":0,"cso_ac":0,"cso_pr":0,"ris_ac":0,"ris_pr":0,"utl_ac":0,"utl_pr":0,"pn_ac":0,"pn_pr":0,"dfl_ac":0,"dfl_pr":0,"tfr_ac":0,"tfr_pr":0,"dfb_ac":0,"dfb_pr":0,"dcom_ac":0,"dcom_pr":0,"altdeb_ac":0,"altdeb_pr":0,"totpass_ac":0,"totpass_pr":0},"ce":{"ric_ac":0,"ric_pr":0,"varrim_ac":0,"varrim_pr":0,"altric_ac":0,"altric_pr":0,"acq_ac":0,"acq_pr":0,"serv_ac":0,"serv_pr":0,"god_ac":0,"god_pr":0,"lav_ac":0,"lav_pr":0,"amm_ac":0,"amm_pr":0,"sval_ac":0,"sval_pr":0,"fin_ac":0,"fin_pr":0,"imp_ac":0,"imp_pr":0,"unet_ac":0,"unet_pr":0},"commento":"2-3 frasi analisi settore ${sectorLabel}"}
+
+Sostituisci gli 0 con i valori reali del bilancio. Assenti=0. SOLO JSON.`;
+  const MODELS=['gemini-2.5-flash','gemini-2.0-flash','gemini-2.0-flash-lite'];
+
+  const PROMPT_SP=`Analizza il bilancio allegato. Rispondi SOLO con questo JSON, nessun testo aggiuntivo, nessun markdown:
+{"cliente":"nome azienda","ac":2024,"pr":2023,"sp":{"immimm_ac":0,"immimm_pr":0,"immmat_ac":0,"immmat_pr":0,"immfin_ac":0,"immfin_pr":0,"rim_ac":0,"rim_pr":0,"cred_ac":0,"cred_pr":0,"liq_ac":0,"liq_pr":0,"altatt_ac":0,"altatt_pr":0,"totatt_ac":0,"totatt_pr":0,"cso_ac":0,"cso_pr":0,"ris_ac":0,"ris_pr":0,"utl_ac":0,"utl_pr":0,"pn_ac":0,"pn_pr":0,"dfl_ac":0,"dfl_pr":0,"tfr_ac":0,"tfr_pr":0,"dfb_ac":0,"dfb_pr":0,"dcom_ac":0,"dcom_pr":0,"altdeb_ac":0,"altdeb_pr":0,"totpass_ac":0,"totpass_pr":0}}
+Sostituisci gli 0 con i valori reali. Assenti=0.`;
+
+  const PROMPT_CE=`Analizza il bilancio allegato. Rispondi SOLO con questo JSON, nessun testo aggiuntivo, nessun markdown:
+{"ce":{"ric_ac":0,"ric_pr":0,"varrim_ac":0,"varrim_pr":0,"altric_ac":0,"altric_pr":0,"acq_ac":0,"acq_pr":0,"serv_ac":0,"serv_pr":0,"god_ac":0,"god_pr":0,"lav_ac":0,"lav_pr":0,"amm_ac":0,"amm_pr":0,"sval_ac":0,"sval_pr":0,"fin_ac":0,"fin_pr":0,"imp_ac":0,"imp_pr":0,"unet_ac":0,"unet_pr":0},"commento":"3 frasi analisi professionale settore ${sectorLabel}"}
+Sostituisci gli 0 con i valori reali. Assenti=0.`;
+
+  async function callGemini(model, prompt){
+    const url='https://generativelanguage.googleapis.com/v1beta/models/'+model+':generateContent?key='+key;
+    const resp=await fetch(url,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        contents:[{parts:[
+          {inline_data:{mime_type:'application/pdf',data:b64}},
+          {text:prompt}
+        ]}],
+        generationConfig:{temperature:0.1,maxOutputTokens:8192}
+      })
+    });
+    if(!resp.ok){
+      const errData=await resp.json().catch(()=>({}));
+      const errMsg=(errData&&errData.error&&errData.error.message)||resp.statusText;
+      const err=new Error('Gemini API '+resp.status+': '+errMsg);
+      err.status=resp.status;
+      throw err;
+    }
+    return resp.json();
+  }
+
+  async function callWithFallback(prompt, stepLabel){
+    let lastErr=null;
+    for(let i=0;i<MODELS.length;i++){
+      const model=MODELS[i];
+      try{
+        document.getElementById('s1').querySelector('span').textContent=stepLabel+' ('+model+')...';
+        const data=await callGemini(model, prompt);
+        const raw=(data.candidates&&data.candidates[0]&&data.candidates[0].content&&data.candidates[0].content.parts&&data.candidates[0].content.parts[0]&&data.candidates[0].content.parts[0].text)||'';
+        if(!raw) throw new Error('Risposta vuota');
+        return parseGeminiJSON(raw);
+      }catch(e){
+        lastErr=e;
+        if((e.status===429||e.status===503)&&i<MODELS.length-1){
+          await new Promise(r=>setTimeout(r,1500));
+          continue;
+        }
+        throw e;
+      }
+    }
+    throw lastErr;
+  }
+
+  try{
+    // CHIAMATA 1: Stato Patrimoniale
+    document.getElementById('s2').className='step active';
+    const d1=await callWithFallback(PROMPT_SP, 'Estrazione Stato Patrimoniale');
+
+    // CHIAMATA 2: Conto Economico
+    document.getElementById('s2').className='step done';
+    document.getElementById('s3').className='step active';
+    const d2=await callWithFallback(PROMPT_CE, 'Estrazione Conto Economico');
+
+    // Unisci i risultati
+    document.getElementById('s3').className='step done';
+    document.getElementById('s4').className='step active';
+    const d={...d1, ...d2};
+
+    clearInterval(stepTimer);
+    for(let i=1;i<=5;i++)document.getElementById('s'+i).className='step done';
+    setTimeout(()=>renderReport(d),500);
+
+  }catch(err){
+    clearInterval(stepTimer);
+    document.getElementById('loadingWrap').style.display='none';
+    document.getElementById('setupPanel').style.display='block';
+    let msg=err.message;
+    if(msg.indexOf('400')>-1)msg='Errore 400: PDF non leggibile. Prova a esportarlo di nuovo.';
+    if(msg.indexOf('403')>-1)msg='Errore 403: API key non valida. Verifica su aistudio.google.com.';
+    if(msg.indexOf('429')>-1)msg='Errore 429: Quota esaurita. Attendi qualche minuto e riprova.';
+    showError('Errore: '+msg);
+    console.error(err);
+  }
+}
+
+function normalizeData(d){
+  // mappa chiavi corte (da Gemini) alle chiavi lunghe usate nel report
+  if(!d.sp||!d.ce)return d; // gia nel formato lungo
+  if('immimm_ac' in d.sp){
+    // formato corto -> espandi
+    const sp=d.sp, ce=d.ce;
+    d.anno_corrente=d.ac||d.anno_corrente||2024;
+    d.anno_precedente=d.pr||d.anno_precedente||2023;
+    d.sp={
+      immobilizzazioni_immateriali_ac:sp.immimm_ac||0, immobilizzazioni_immateriali_prec:sp.immimm_pr||0,
+      immobilizzazioni_materiali_ac:sp.immmat_ac||0,   immobilizzazioni_materiali_prec:sp.immmat_pr||0,
+      immobilizzazioni_finanziarie_ac:sp.immfin_ac||0, immobilizzazioni_finanziarie_prec:sp.immfin_pr||0,
+      rimanenze_ac:sp.rim_ac||0,                       rimanenze_prec:sp.rim_pr||0,
+      crediti_commerciali_ac:sp.cred_ac||0,            crediti_commerciali_prec:sp.cred_pr||0,
+      liquidita_ac:sp.liq_ac||0,                       liquidita_prec:sp.liq_pr||0,
+      altre_attivita_ac:sp.altatt_ac||0,               altre_attivita_prec:sp.altatt_pr||0,
+      totale_attivo_ac:sp.totatt_ac||0,                totale_attivo_prec:sp.totatt_pr||0,
+      capitale_sociale_ac:sp.cso_ac||0,                capitale_sociale_prec:sp.cso_pr||0,
+      riserve_ac:sp.ris_ac||0,                         riserve_prec:sp.ris_pr||0,
+      utile_perdita_ac:sp.utl_ac||0,                   utile_perdita_prec:sp.utl_pr||0,
+      patrimonio_netto_ac:sp.pn_ac||0,                 patrimonio_netto_prec:sp.pn_pr||0,
+      debiti_fin_lungo_ac:sp.dfl_ac||0,                debiti_fin_lungo_prec:sp.dfl_pr||0,
+      fondi_tfr_ac:sp.tfr_ac||0,                       fondi_tfr_prec:sp.tfr_pr||0,
+      debiti_fin_breve_ac:sp.dfb_ac||0,                debiti_fin_breve_prec:sp.dfb_pr||0,
+      debiti_commerciali_ac:sp.dcom_ac||0,             debiti_commerciali_prec:sp.dcom_pr||0,
+      altri_debiti_ac:sp.altdeb_ac||0,                 altri_debiti_prec:sp.altdeb_pr||0,
+      totale_passivo_ac:sp.totpass_ac||0,              totale_passivo_prec:sp.totpass_pr||0
+    };
+    d.ce={
+      ricavi_ac:ce.ric_ac||0,                          ricavi_prec:ce.ric_pr||0,
+      variazione_rimanenze_ac:ce.varrim_ac||0,         variazione_rimanenze_prec:ce.varrim_pr||0,
+      altri_ricavi_ac:ce.altric_ac||0,                 altri_ricavi_prec:ce.altric_pr||0,
+      acquisti_ac:ce.acq_ac||0,                        acquisti_prec:ce.acq_pr||0,
+      servizi_ac:ce.serv_ac||0,                        servizi_prec:ce.serv_pr||0,
+      godimento_beni_ac:ce.god_ac||0,                  godimento_beni_prec:ce.god_pr||0,
+      costo_lavoro_ac:ce.lav_ac||0,                    costo_lavoro_prec:ce.lav_pr||0,
+      ammortamenti_ac:ce.amm_ac||0,                    ammortamenti_prec:ce.amm_pr||0,
+      svalutazioni_ac:ce.sval_ac||0,                   svalutazioni_prec:ce.sval_pr||0,
+      altri_oneri_ac:0,                                altri_oneri_prec:0,
+      proventi_oneri_finanziari_ac:ce.fin_ac||0,       proventi_oneri_finanziari_prec:ce.fin_pr||0,
+      imposte_ac:ce.imp_ac||0,                         imposte_prec:ce.imp_pr||0,
+      utile_netto_ac:ce.unet_ac||0,                    utile_netto_prec:ce.unet_pr||0
+    };
+    // calcola indici in JS
+    const sp2=d.sp, ce2=d.ce;
+    function safe(a,b){return b&&b!==0?a/b:0;}
+    function calcIdx(sfx){
+      const s='_'+sfx;
+      const va=ce2['ricavi'+s]+ce2['variazione_rimanenze'+s]+ce2['altri_ricavi'+s]-ce2['acquisti'+s]-ce2['servizi'+s]-ce2['godimento_beni'+s];
+      const ebitda=va-ce2['costo_lavoro'+s];
+      const ebit=ebitda-ce2['ammortamenti'+s]-ce2['svalutazioni'+s];
+      const totatt=sp2['totale_attivo'+s], pn=sp2['patrimonio_netto'+s];
+      const pfn=sp2['debiti_fin_lungo'+s]+sp2['debiti_fin_breve'+s]-sp2['liquidita'+s];
+      const passCorr=sp2['debiti_fin_breve'+s]+sp2['debiti_commerciali'+s]+sp2['altri_debiti'+s];
+      const attCorr=sp2['rimanenze'+s]+sp2['crediti_commerciali'+s]+sp2['liquidita'+s]+sp2['altre_attivita'+s];
+      const ric=ce2['ricavi'+s];
+      return{
+        ['roi'+s]:safe(ebit,totatt)*100,
+        ['roe'+s]:safe(ce2['utile_netto'+s],pn)*100,
+        ['ros'+s]:safe(ebit,ric)*100,
+        ['current_ratio'+s]:safe(attCorr,passCorr),
+        ['quick_ratio'+s]:safe(attCorr-sp2['rimanenze'+s],passCorr),
+        ['debt_equity'+s]:safe(totatt-pn,pn),
+        ['leverage'+s]:safe(totatt,pn),
+        ['dscr'+s]:safe(ebitda-ce2['imposte'+s],Math.max(sp2['debiti_fin_lungo'+s]/7,1)),
+        ['pfn_ebitda'+s]:safe(pfn,ebitda),
+        ['rotazione_crediti'+s]:safe(sp2['crediti_commerciali'+s],ric)*365,
+        ['rotazione_debiti'+s]:safe(sp2['debiti_commerciali'+s],ce2['acquisti'+s])*365,
+        ['rotazione_magazzino'+s]:safe(sp2['rimanenze'+s],ce2['acquisti'+s]+ce2['servizi'+s])*365,
+        ['ebitda'+s]:ebitda, ['ebit'+s]:ebit, ['pfn'+s]:pfn
+      };
+    }
+    d.indici={...calcIdx('ac'),...calcIdx('prec')};
+    d.commento_professionale=d.commento||'';
+  }
+  return d;
+}
+
+function renderReport(d){
+  d=normalizeData(d);
+  document.getElementById('loadingWrap').style.display='none';
+  document.getElementById('reportSection').style.display='block';
+  const bm=BENCHMARKS[selectedSector]||BENCHMARKS.default;
+  const sl=SECTOR_LABELS[selectedSector]||selectedSector;
+  const today=new Date().toLocaleDateString('it-IT',{day:'2-digit',month:'long',year:'numeric'});
+  const AC=d.anno_corrente||2024, PR=d.anno_precedente||2023;
+
+  // header
+  document.getElementById('rcCliente').textContent=d.cliente||'Azienda Cliente';
+  document.getElementById('rcSector').textContent='Settore: '+sl;
+  document.getElementById('rcPiva').textContent=document.getElementById('inPiva').value||'';
+  document.getElementById('rcYears').textContent=AC+' / '+PR;
+  document.getElementById('rcDate').textContent=today;
+  document.getElementById('actionDate').textContent=today;
+  document.getElementById('rcFootDate').textContent='Elaborato il '+today;
+  ['spHdrAc','spHdrAc2'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=AC;});
+  ['spHdrPr','spHdrPr2'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=PR;});
+  const ceAcH=document.getElementById('ceHdrAc'); if(ceAcH) ceAcH.innerHTML='&#128202; '+AC;
+  const cePrH=document.getElementById('ceHdrPr'); if(cePrH) cePrH.innerHTML='&#128202; '+PR;
+
+  const sp=d.sp, ce=d.ce, ix=d.indici;
+
+  // ── CALCOLO INTERMEDI (unica fonte di verita) ──
+  function calcRedd(s){
+    const va  = ce['ricavi'+s]+ce['variazione_rimanenze'+s]+ce['altri_ricavi'+s]
+               -ce['acquisti'+s]-ce['servizi'+s]-ce['godimento_beni'+s];
+    const ebitda = va - ce['costo_lavoro'+s];
+    const ebit   = ebitda - ce['ammortamenti'+s] - ce['svalutazioni'+s];
+    const ric    = ce['ricavi'+s]||1;
+    const ta     = sp['totale_attivo'+s]||1;
+    const pn     = sp['patrimonio_netto'+s]||1;
+    const passC  = sp['debiti_fin_breve'+s]+sp['debiti_commerciali'+s]+sp['altri_debiti'+s]||1;
+    const attC   = sp['rimanenze'+s]+sp['crediti_commerciali'+s]+sp['liquidita'+s]+sp['altre_attivita'+s];
+    const pfn    = sp['debiti_fin_lungo'+s]+sp['debiti_fin_breve'+s]-sp['liquidita'+s];
+    const debTot = sp['totale_passivo'+s]-pn;
+    return{va,ebitda,ebit,ric,ta,pn,passC,attC,pfn,debTot,
+      roi:ebit/ta*100, roe:ce['utile_netto'+s]/pn*100, ros:ebit/ric*100,
+      cr:attC/passC, qr:(sp['crediti_commerciali'+s]+sp['liquidita'+s])/passC,
+      de:debTot/pn, lev:ta/pn, pfne:ebitda!==0?pfn/ebitda:0,
+      dscr:ebitda/(Math.max(sp['debiti_fin_lungo'+s]/7,1)),
+      icr:ce['proventi_oneri_finanziari'+s]<0 ? ebit/Math.abs(ce['proventi_oneri_finanziari'+s]) : 99,
+      ccn:sp['rimanenze'+s]+sp['crediti_commerciali'+s]-sp['debiti_commerciali'+s]
+    };
+  }
+  const r_ac   = calcRedd('_ac');
+  const r_prec = calcRedd('_prec');
+
+  // Altman Z-Score PMI non quotate
+  function altman(s,r){
+    const ta=sp['totale_attivo'+s]||1;
+    const x1=(sp['rimanenze'+s]+sp['crediti_commerciali'+s]+sp['liquidita'+s]
+              -sp['debiti_fin_breve'+s]-sp['debiti_commerciali'+s]-sp['altri_debiti'+s])/ta;
+    const x2=sp['riserve'+s]/ta;
+    const x3=r.ebit/ta;
+    const x4=sp['patrimonio_netto'+s]/(r.debTot||1);
+    const x5=ce['ricavi'+s]/ta;
+    return 0.717*x1+0.847*x2+3.107*x3+0.420*x4+0.998*x5;
+  }
+  const z_ac   = altman('_ac', r_ac);
+  const z_prec = altman('_prec', r_prec);
+
+  // ── SEMAFORO ──
+  const semItems=[
+    {label:'Redditivita (ROI)',    val:r_ac.roi.toFixed(1)+'%', good:r_ac.roi>=bm.roi[1],  warn:r_ac.roi>=bm.roi[0],  note:'Benchmark: >'+bm.roi[1]+'% &mdash; Cerved PMI'},
+    {label:'Liquidita (Curr. R.)',val:r_ac.cr.toFixed(2),       good:r_ac.cr>=bm.cr[1],    warn:r_ac.cr>=bm.cr[0],    note:'Benchmark: >'+bm.cr[1]+' &mdash; Banca d\'Italia'},
+    {label:'Solidita (D/E)',      val:r_ac.de.toFixed(2),       good:r_ac.de<=bm.de[0],    warn:r_ac.de<=bm.de[1],    note:'Benchmark: <'+bm.de[0]+' &mdash; Cerved PMI'},
+    {label:'Copertura (DSCR)',    val:r_ac.dscr.toFixed(2),     good:r_ac.dscr>=bm.dscr[1],warn:r_ac.dscr>=bm.dscr[0],note:'Benchmark: >'+bm.dscr[1]+' &mdash; EBA Guidelines'},
+    {label:'ROS',                 val:r_ac.ros.toFixed(1)+'%',  good:r_ac.ros>=bm.ros[1],  warn:r_ac.ros>=bm.ros[0],  note:'Benchmark: >'+bm.ros[1]+'% &mdash; Cerved PMI'},
+    {label:'Leva Finanziaria',    val:r_ac.lev.toFixed(2),      good:r_ac.lev<=bm.lev[0],  warn:r_ac.lev<=bm.lev[1],  note:'Benchmark: <'+bm.lev[0]+' &mdash; Banca d\'Italia'},
+    {label:'PFN/EBITDA',          val:(isFinite(r_ac.pfne)?r_ac.pfne.toFixed(2):'n.a.'),good:r_ac.pfne<=bm.pfnebitda[0],warn:r_ac.pfne<=bm.pfnebitda[1],note:'Benchmark: <'+bm.pfnebitda[0]+' &mdash; CRIBIS D&B'},
+    {label:'ROE',                 val:r_ac.roe.toFixed(1)+'%',  good:r_ac.roe>=bm.roe[1],  warn:r_ac.roe>=bm.roe[0],  note:'Benchmark: >'+bm.roe[1]+'% &mdash; Cerved PMI'},
+  ];
+  document.getElementById('semGrid').innerHTML=semItems.map(s=>{
+    const cls=s.good?'green':s.warn?'amber':'red';
+    return '<div class="sem-item"><div class="sem-dot '+cls+'"></div><div class="sem-label">'+s.label+'</div><div class="sem-value">'+s.val+'</div><div class="sem-note">'+s.note+'</div></div>';
+  }).join('');
+
+  // ── KPI ──
+  document.getElementById('kpiRow').innerHTML=[
+    {lbl:'Ricavi',         val:fE(ce.ricavi_ac),            delta:pct(ce.ricavi_ac,ce.ricavi_prec),               cls:ce.ricavi_ac>=ce.ricavi_prec?'pos':'neg'},
+    {lbl:'EBITDA',         val:fE(r_ac.ebitda),             delta:pct(r_ac.ebitda,r_prec.ebitda),                 cls:r_ac.ebitda>=r_prec.ebitda?'pos':'neg'},
+    {lbl:'Utile Netto',    val:fE(ce.utile_netto_ac),       delta:pct(ce.utile_netto_ac,ce.utile_netto_prec),     cls:ce.utile_netto_ac>=0?'pos':'neg'},
+    {lbl:'Patrimonio Netto',val:fE(sp.patrimonio_netto_ac), delta:pct(sp.patrimonio_netto_ac,sp.patrimonio_netto_prec),cls:sp.patrimonio_netto_ac>=sp.patrimonio_netto_prec?'pos':'warn'},
+  ].map(k=>'<div class="kpi-cell '+k.cls+'"><div class="kpi-lbl">'+k.lbl+'</div><div class="kpi-val">'+k.val+'</div><div class="kpi-delta '+(k.delta[0]==='+' ?'up':'dn')+'">'+k.delta+' vs anno prec.</div></div>').join('');
+
+  // ── SP ──
+  document.getElementById('spAttivoTable').innerHTML=
+    '<tr class="cat"><td colspan="3">ATTIVO IMMOBILIZZATO</td></tr>'+
+    spRow('Imm. Immateriali',sp.immobilizzazioni_immateriali_ac,sp.immobilizzazioni_immateriali_prec)+
+    spRow('Imm. Materiali',sp.immobilizzazioni_materiali_ac,sp.immobilizzazioni_materiali_prec)+
+    spRow('Imm. Finanziarie',sp.immobilizzazioni_finanziarie_ac,sp.immobilizzazioni_finanziarie_prec)+
+    '<tr class="cat"><td colspan="3">ATTIVO CIRCOLANTE</td></tr>'+
+    spRow('Rimanenze',sp.rimanenze_ac,sp.rimanenze_prec)+
+    spRow('Crediti Commerciali',sp.crediti_commerciali_ac,sp.crediti_commerciali_prec)+
+    spRow('Liquidita',sp.liquidita_ac,sp.liquidita_prec)+
+    spRow('Altre Attivita',sp.altre_attivita_ac,sp.altre_attivita_prec)+
+    '<tr class="tot"><td><b>TOTALE ATTIVO</b></td><td><b>'+fE(sp.totale_attivo_ac)+'</b></td><td><b>'+fE(sp.totale_attivo_prec)+'</b></td></tr>';
+
+  document.getElementById('spPassivoTable').innerHTML=
+    '<tr class="cat"><td colspan="3">PATRIMONIO NETTO</td></tr>'+
+    spRow('Capitale Sociale',sp.capitale_sociale_ac,sp.capitale_sociale_prec)+
+    spRow('Riserve',sp.riserve_ac,sp.riserve_prec)+
+    spRow('Utile / Perdita',sp.utile_perdita_ac,sp.utile_perdita_prec)+
+    '<tr class="cat"><td colspan="3">PASSIVITA CONSOLIDATE</td></tr>'+
+    spRow('Debiti Fin. Lungo',sp.debiti_fin_lungo_ac,sp.debiti_fin_lungo_prec)+
+    spRow('Fondi e TFR',sp.fondi_tfr_ac,sp.fondi_tfr_prec)+
+    '<tr class="cat"><td colspan="3">PASSIVITA CORRENTI</td></tr>'+
+    spRow('Debiti Fin. Breve',sp.debiti_fin_breve_ac,sp.debiti_fin_breve_prec)+
+    spRow('Debiti Comm.',sp.debiti_commerciali_ac,sp.debiti_commerciali_prec)+
+    spRow('Altri Debiti',sp.altri_debiti_ac,sp.altri_debiti_prec)+
+    '<tr class="tot"><td><b>TOT. PASSIVO + PN</b></td><td><b>'+fE(sp.totale_passivo_ac)+'</b></td><td><b>'+fE(sp.totale_passivo_prec)+'</b></td></tr>';
+
+  // ── CE ──
+  function ceVA(r,s){
+    const suf=s;
+    const ricavi=ce['ricavi'+suf],varRim=ce['variazione_rimanenze'+suf],altriRic=ce['altri_ricavi'+suf];
+    const acq=ce['acquisti'+suf],serv=ce['servizi'+suf],god=ce['godimento_beni'+suf];
+    const lav=ce['costo_lavoro'+suf],amm=ce['ammortamenti'+suf]+ce['svalutazioni'+suf];
+    const fin=ce['proventi_oneri_finanziari'+suf],imp=ce['imposte'+suf],net=ce['utile_netto'+suf];
+    return '<tr><td class="indent">Ricavi di vendita</td><td>'+fE(ricavi)+'</td></tr>'+
+      '<tr><td class="indent">+/- Var. Rimanenze</td><td>'+fE(varRim)+'</td></tr>'+
+      '<tr><td class="indent">Altri ricavi</td><td>'+fE(altriRic)+'</td></tr>'+
+      '<tr><td class="indent">- Acquisti</td><td class="neg">('+fE(acq)+')</td></tr>'+
+      '<tr><td class="indent">- Servizi</td><td class="neg">('+fE(serv)+')</td></tr>'+
+      '<tr><td class="indent">- Godimento beni</td><td class="neg">('+fE(god)+')</td></tr>'+
+      '<tr class="step-row"><td>= VALORE AGGIUNTO</td><td>'+fE(r.va)+'</td></tr>'+
+      '<tr><td class="indent">- Costo del lavoro</td><td class="neg">('+fE(lav)+')</td></tr>'+
+      '<tr class="step-row"><td>= MOL / EBITDA</td><td>'+fE(r.ebitda)+'</td></tr>'+
+      '<tr><td class="indent">- Amm. e Svalutazioni</td><td class="neg">('+fE(amm)+')</td></tr>'+
+      '<tr class="step-row"><td>= EBIT</td><td>'+fE(r.ebit)+'</td></tr>'+
+      '<tr><td class="indent">+/- Proventi/Oneri Fin.</td><td>'+fE(fin)+'</td></tr>'+
+      '<tr class="step-row"><td>= EBT</td><td>'+fE(r.ebit+fin)+'</td></tr>'+
+      '<tr><td class="indent">- Imposte</td><td class="neg">('+fE(imp)+')</td></tr>'+
+      '<tr class="step-row"><td>= UTILE NETTO</td><td>'+fE(net)+'</td></tr>';
+  }
+  document.getElementById('ceAcTable').innerHTML=ceVA(r_ac,'_ac');
+  document.getElementById('cePrecTable').innerHTML=ceVA(r_prec,'_prec');
+
+  // ── PFN TABLE ──
+  document.getElementById('pfnTable').innerHTML=
+    spRow('Debiti Fin. Lungo',sp.debiti_fin_lungo_ac,sp.debiti_fin_lungo_prec)+
+    spRow('Debiti Fin. Breve',sp.debiti_fin_breve_ac,sp.debiti_fin_breve_prec)+
+    spRow('- Liquidita',sp.liquidita_ac,sp.liquidita_prec)+
+    '<tr class="tot"><td><b>PFN</b></td><td style="text-align:right"><b>'+fE(r_ac.pfn)+'</b></td><td style="text-align:right"><b>'+fE(r_prec.pfn)+'</b></td></tr>'+
+    '<tr class="sub"><td>PFN / EBITDA</td><td style="text-align:right">'+(isFinite(r_ac.pfne)?r_ac.pfne.toFixed(2):'n.a.')+'</td><td style="text-align:right;color:var(--gray-mid)">'+(isFinite(r_prec.pfne)?r_prec.pfne.toFixed(2):'n.a.')+'</td></tr>'+
+    spRow('Patrimonio Netto',sp.patrimonio_netto_ac,sp.patrimonio_netto_prec);
+
+  // ── CRISI TABLE ──
+  const z_lbl = z_ac>=2.9?'&#128994; Zona Sicura':z_ac>=1.23?'&#128993; Zona Grigia':'&#128308; Zona Rischio';
+  const dscr_lbl = r_ac.dscr>=1.1?'&#128994; Adeguato':r_ac.dscr>=1.0?'&#128993; Attenzione':'&#128308; Critico';
+  const ccn_lbl = r_ac.ccn>=0?'&#128994; Positivo':'&#128308; Negativo';
+  const pfne_lbl = r_ac.pfne<=3?'&#128994; Sostenibile':r_ac.pfne<=5?'&#128993; Attenzione':'&#128308; Critico';
+  document.getElementById('crisiTable').innerHTML=
+    '<tr class="sub"><td>Altman Z-Score</td><td style="text-align:right">'+z_ac.toFixed(2)+' &rarr; '+z_lbl+'</td></tr>'+
+    '<tr class="sub"><td>DSCR</td><td style="text-align:right">'+r_ac.dscr.toFixed(2)+' &rarr; '+dscr_lbl+'</td></tr>'+
+    '<tr class="sub"><td>CCN Operativo</td><td style="text-align:right">'+fE(r_ac.ccn)+' &rarr; '+ccn_lbl+'</td></tr>'+
+    '<tr class="sub"><td>PFN/EBITDA</td><td style="text-align:right">'+(isFinite(r_ac.pfne)?r_ac.pfne.toFixed(2):'n.a.')+' &rarr; '+pfne_lbl+'</td></tr>';
+
+  // ── ADEGUATI ASSETTI ──
+  document.getElementById('assetti-grid').innerHTML=[
+    {title:'DSCR',val:r_ac.dscr.toFixed(2),note:'Soglia art. 3 CCI: >1.0 su 12 mesi',cls:r_ac.dscr>=1.1?'ok':r_ac.dscr>=1.0?'warn':'crit'},
+    {title:'PFN / EBITDA',val:isFinite(r_ac.pfne)?r_ac.pfne.toFixed(2)+'x':'n.a.',note:'Soglia allerta CCI: >5x',cls:r_ac.pfne<=3?'ok':r_ac.pfne<=5?'warn':'crit'},
+    {title:'Altman Z-Score PMI',val:z_ac.toFixed(2),note:'Zona sicura >2.9 | Grigia 1.23-2.9 | Rischio <1.23',cls:z_ac>=2.9?'ok':z_ac>=1.23?'warn':'crit'},
+    {title:'CCN Operativo',val:fE(r_ac.ccn),note:'CCN negativo = squilibrio finanziario breve termine',cls:r_ac.ccn>=0?'ok':'crit'},
+    {title:'Patrimonio Netto',val:fE(sp.patrimonio_netto_ac),note:'PN negativo attiva art. 2482-ter c.c.',cls:sp.patrimonio_netto_ac>0?'ok':'crit'},
+    {title:'Interest Coverage',val:r_ac.icr>=99?'n.a.':r_ac.icr.toFixed(2)+'x',note:'ICR < 1.5 = difficolta servizio debito',cls:r_ac.icr>=4?'ok':r_ac.icr>=1.5?'warn':'crit'},
+  ].map(a=>'<div class="assetti-card '+a.cls+'"><div class="assetti-title">'+a.title+'</div><div class="assetti-val">'+a.val+'</div><div class="assetti-note">'+a.note+'</div></div>').join('');
+
+  // ── INDICI ──
+  document.getElementById('sectorBadge').innerHTML='<strong>Settore:</strong> '+sl+' &nbsp;|&nbsp; <strong>Benchmark:</strong> Cerved PMI, Banca d\'Italia, CNDCEC &nbsp;|&nbsp; <strong>Normativa:</strong> D.Lgs. 14/2019, art. 2086 c.c.';
+  const fmt2=(v,u)=>isFinite(v)?v.toFixed(2)+(u||''):'n.a.';
+  const indices=[
+    {name:'ROI',desc:'Return on Investment',formula:'EBIT / Totale Attivo × 100',unit:'%',ac:r_ac.roi,prec:r_prec.roi,bmLow:bm.roi[0],bmHigh:bm.roi[1],inv:false,expl:'Redditivita del capitale investito.',bn:'Cerved PMI'},
+    {name:'ROE',desc:'Return on Equity',formula:'Utile Netto / Patrimonio Netto × 100',unit:'%',ac:r_ac.roe,prec:r_prec.roe,bmLow:bm.roe[0],bmHigh:bm.roe[1],inv:false,expl:'Redditivita del capitale proprio.',bn:'Cerved PMI'},
+    {name:'ROS',desc:'Return on Sales',formula:'EBIT / Ricavi × 100',unit:'%',ac:r_ac.ros,prec:r_prec.ros,bmLow:bm.ros[0],bmHigh:bm.ros[1],inv:false,expl:'Margine operativo per euro di ricavo.',bn:'Cerved PMI'},
+    {name:'Current Ratio',desc:'Liquidita Corrente',formula:'Attivo Circ. / Passivo Corrente',unit:'',ac:r_ac.cr,prec:r_prec.cr,bmLow:bm.cr[0],bmHigh:bm.cr[1],inv:false,expl:'Capacita di coprire le obbligazioni a breve.',bn:'Banca d\'Italia'},
+    {name:'Quick Ratio',desc:'Liquidita Secca',formula:'(Crediti + Liq.) / Passivo Corrente',unit:'',ac:r_ac.qr,prec:r_prec.qr,bmLow:0.8,bmHigh:1.2,inv:false,expl:'Liquidita immediata escludendo le rimanenze.',bn:'EBA'},
+    {name:'Debt / Equity',desc:'Grado di Indebitamento',formula:'Debiti Totali / Patrimonio Netto',unit:'',ac:r_ac.de,prec:r_prec.de,bmLow:bm.de[0],bmHigh:bm.de[1],inv:true,expl:'Leva finanziaria: debiti vs capitale proprio.',bn:'Cerved / Banca d\'Italia'},
+    {name:'PFN / EBITDA',desc:'Sostenibilita Debito Fin.',formula:'PFN / EBITDA',unit:'',ac:r_ac.pfne,prec:r_prec.pfne,bmLow:bm.pfnebitda[0],bmHigh:bm.pfnebitda[1],inv:true,expl:'Anni per ripagare il debito fin. netto. >5x = allerta CCI.',bn:'D.Lgs. 14/2019 - CNDCEC'},
+    {name:'DSCR',desc:'Debt Service Coverage',formula:'EBITDA / Servizio Debito annuo',unit:'',ac:r_ac.dscr,prec:r_prec.dscr,bmLow:bm.dscr[0],bmHigh:bm.dscr[1],inv:false,expl:'<1 = indicatore crisi art. 3 CCI.',bn:'D.Lgs. 14/2019'},
+    {name:'CCN Operativo',desc:'Capitale Circolante Netto',formula:'Rim. + Crediti Comm. - Deb. Comm.',unit:'',ac:r_ac.ccn,prec:r_prec.ccn,bmLow:0,bmHigh:1,inv:false,expl:'CCN negativo = segnale allerta CCI.',bn:'CNDCEC 2023'},
+    {name:'Altman Z-Score',desc:'Probabilita di Default PMI',formula:'0.717X1+0.847X2+3.107X3+0.420X4+0.998X5',unit:'',ac:z_ac,prec:z_prec,bmLow:1.23,bmHigh:2.9,inv:false,expl:'Z>2.9 sicuro | 1.23-2.9 grigio | <1.23 rischio.',bn:'Altman PMI - CNDCEC'},
+    {name:'Interest Coverage',desc:'Copertura Oneri Finanziari',formula:'EBIT / |Oneri Finanziari|',unit:'',ac:r_ac.icr,prec:r_prec.icr,bmLow:2,bmHigh:4,inv:false,expl:'<1.5 = difficolta nel servizio del debito.',bn:'EBA / Banca d\'Italia'},
+  ];
+  document.getElementById('idxBody').innerHTML=indices.map((idx,i)=>{
+    const a=isFinite(idx.ac)?idx.ac:0, p=isFinite(idx.prec)?idx.prec:0;
+    const delta=a-p;
+    const better=idx.inv?delta<0:delta>0;
+    const pctD=p!==0?((Math.abs(delta)/Math.abs(p))*100).toFixed(1)+'%':'--';
+    const aC=better?'#2e7d32':'#c62828';
+    const arrChr=delta>0?'&#9650;':delta<0?'&#9660;':'=';
+    let bCls,bLbl;
+    // CCN: logica speciale (valore assoluto, non ratio)
+    if(idx.name==='CCN Operativo'){bCls=a>=0?'g':'r';bLbl=a>=0?'Positivo':'Negativo';}
+    else if(idx.inv){bCls=a<=idx.bmLow?'g':a<=idx.bmHigh?'a':'r';bLbl=a<=idx.bmLow?'Buono':a<=idx.bmHigh?'Attenzione':'Critico';}
+    else{bCls=a>=idx.bmHigh?'g':a>=idx.bmLow?'a':'r';bLbl=a>=idx.bmHigh?'Buono':a>=idx.bmLow?'Attenzione':'Critico';}
+    const bmPct=idx.bmHigh<=0?50:idx.inv?Math.max(0,Math.min(100,100-(a/idx.bmHigh*100))):Math.max(0,Math.min(100,a/idx.bmHigh*100));
+    const bc=bCls==='g'?'#2e7d32':bCls==='a'?'#f59e0b':'#c62828';
+    return '<tr><td><div class="idx-name">'+idx.name+'</div><div class="idx-desc">'+idx.desc+'</div>'+
+      '<div style="margin-top:4px"><button class="fe-btn" onclick="toggleFE('+i+')">Formula &amp; note</button>'+
+      '<div class="fe-body" id="fe'+i+'"><div class="f">'+idx.formula+'</div><div class="ex">'+idx.expl+'</div><div class="sector-note">'+idx.bn+'</div></div></div></td>'+
+      '<td style="font-size:10px;color:var(--gray-mid);vertical-align:top;padding-top:8px">'+idx.formula+'</td>'+
+      '<td class="num-cell">'+fmt2(a,idx.unit)+'</td>'+
+      '<td class="num-prev">'+fmt2(p,idx.unit)+'</td>'+
+      '<td><span style="color:'+aC+';font-size:13px">'+arrChr+'</span> <span style="font-size:10px;color:'+aC+'">'+pctD+'</span></td>'+
+      '<td><div class="bench-bar"><div class="bench-fill" style="width:'+bmPct+'%;background:'+bc+'"></div></div><div style="font-size:9px;color:var(--gray-mid);margin-top:2px">vs benchmark</div></td>'+
+      '<td><span class="badge '+bCls+'">'+bLbl+'</span></td></tr>';
+  }).join('');
+
+  document.getElementById('noteCommercialista').value=d.commento_professionale||'';
+
+  // ── GRAFICI ──
+  destroyCharts();
+  const CN='#1B3A6B',CN2='rgba(27,58,107,.25)',CG='#C9A96E';
+
+  // Fissa altezza canvas prima di creare i grafici (fix html2canvas)
+  ['chSP','chVA','chPN','chMargini','chCosti'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el){el.style.width='100%';el.style.display='block';}
+  });
+
+  charts.sp=new Chart(document.getElementById('chSP').getContext('2d'),{type:'bar',
+    data:{labels:['Imm.','Att.Circ.','Patr.Netto','Deb.Fin.','Deb.Comm.'],
+      datasets:[
+        {label:String(AC),data:[sp.immobilizzazioni_immateriali_ac+sp.immobilizzazioni_materiali_ac+sp.immobilizzazioni_finanziarie_ac,r_ac.attC,sp.patrimonio_netto_ac,sp.debiti_fin_lungo_ac+sp.debiti_fin_breve_ac,sp.debiti_commerciali_ac],backgroundColor:CN},
+        {label:String(PR),data:[sp.immobilizzazioni_immateriali_prec+sp.immobilizzazioni_materiali_prec+sp.immobilizzazioni_finanziarie_prec,r_prec.attC,sp.patrimonio_netto_prec,sp.debiti_fin_lungo_prec+sp.debiti_fin_breve_prec,sp.debiti_commerciali_prec],backgroundColor:CN2,borderColor:CN,borderWidth:1}
+      ]},
+    options:{responsive:true,maintainAspectRatio:false,animation:{duration:0},plugins:{legend:{labels:{font:{size:9}}}},scales:{y:{ticks:{callback:v=>fEShort(v),font:{size:8}}},x:{ticks:{font:{size:9}}}}}});
+
+  charts.va=new Chart(document.getElementById('chVA').getContext('2d'),{type:'bar',
+    data:{labels:['Ricavi','Val.Agg.','EBITDA','EBIT','Utile'],
+      datasets:[
+        {label:String(AC),data:[ce.ricavi_ac,r_ac.va,r_ac.ebitda,r_ac.ebit,ce.utile_netto_ac],backgroundColor:CN},
+        {label:String(PR),data:[ce.ricavi_prec,r_prec.va,r_prec.ebitda,r_prec.ebit,ce.utile_netto_prec],backgroundColor:CN2,borderColor:CN,borderWidth:1}
+      ]},
+    options:{responsive:true,maintainAspectRatio:false,animation:{duration:0},plugins:{legend:{labels:{font:{size:9}}}},scales:{y:{ticks:{callback:v=>fEShort(v),font:{size:8}}},x:{ticks:{font:{size:9}}}}}});
+
+  charts.pn=new Chart(document.getElementById('chPN').getContext('2d'),{type:'bar',
+    data:{labels:[String(PR),String(AC)],
+      datasets:[
+        {label:'Capitale Sociale',data:[sp.capitale_sociale_prec,sp.capitale_sociale_ac],backgroundColor:CN},
+        {label:'Riserve',data:[sp.riserve_prec,sp.riserve_ac],backgroundColor:'#2a5298'},
+        {label:'Utile/Perdita',data:[sp.utile_perdita_prec,sp.utile_perdita_ac],backgroundColor:sp.utile_perdita_ac>=0?'#2e7d32':'#c62828'},
+      ]},
+    options:{responsive:true,maintainAspectRatio:false,animation:{duration:0},plugins:{legend:{labels:{font:{size:9}}}},scales:{x:{stacked:true,ticks:{font:{size:9}}},y:{stacked:true,ticks:{callback:v=>fEShort(v),font:{size:8}}}}}});
+
+  charts.margini=new Chart(document.getElementById('chMargini').getContext('2d'),{type:'bar',
+    data:{labels:['EBITDA%','EBIT%','ROS%','ROI%'],
+      datasets:[
+        {label:String(AC),data:[r_ac.ebitda/r_ac.ric*100,r_ac.ebit/r_ac.ric*100,r_ac.ros,r_ac.roi].map(v=>+v.toFixed(1)),backgroundColor:CN},
+        {label:String(PR),data:[r_prec.ebitda/r_prec.ric*100,r_prec.ebit/r_prec.ric*100,r_prec.ros,r_prec.roi].map(v=>+v.toFixed(1)),backgroundColor:CN2,borderColor:CN,borderWidth:1}
+      ]},
+    options:{responsive:true,maintainAspectRatio:false,animation:{duration:0},plugins:{legend:{labels:{font:{size:9}}}},scales:{y:{ticks:{callback:v=>v+'%',font:{size:8}}},x:{ticks:{font:{size:9}}}}}});
+
+  const totC=ce.acquisti_ac+ce.servizi_ac+ce.godimento_beni_ac+ce.costo_lavoro_ac+ce.ammortamenti_ac+ce.svalutazioni_ac||1;
+  charts.costi=new Chart(document.getElementById('chCosti').getContext('2d'),{type:'doughnut',
+    data:{labels:['Acquisti','Servizi','God. Beni','Personale','Amm./Sval.'],
+      datasets:[{data:[ce.acquisti_ac,ce.servizi_ac,ce.godimento_beni_ac,ce.costo_lavoro_ac,ce.ammortamenti_ac+ce.svalutazioni_ac],
+        backgroundColor:['#1B3A6B','#2a5298','#3d6db8',CG,'#8a9ab5'],borderWidth:1,borderColor:'#fff'}]},
+    options:{responsive:true,maintainAspectRatio:false,animation:{duration:0},
+      plugins:{legend:{position:'bottom',labels:{font:{size:9},boxWidth:10}},
+      tooltip:{callbacks:{label:ctx=>{const p=(ctx.raw/totC*100).toFixed(1);return ctx.label+': '+fEShort(ctx.raw)+' ('+p+'%)';}}}}}});
+}
+
+function spRow(label,ac,prec){return '<tr class="sub"><td>'+label+'</td><td style="text-align:right">'+fE(ac)+'</td><td style="text-align:right;color:var(--gray-mid)">'+fE(prec)+'</td></tr>';}
+function toggleFE(i){document.getElementById('fe'+i).classList.toggle('open');}
+function destroyCharts(){Object.values(charts).forEach(c=>{try{c&&c.destroy();}catch(e){}});charts={};}
+function fE(v){if(v===undefined||v===null)return'--';return new Intl.NumberFormat('it-IT',{style:'currency',currency:'EUR',maximumFractionDigits:0}).format(v);}
+function fEShort(v){if(Math.abs(v)>=1e6)return'euro'+(v/1e6).toFixed(1)+'M';if(Math.abs(v)>=1e3)return'euro'+(v/1e3).toFixed(0)+'k';return'euro'+v;}
+function pct(ac,prec){if(!prec)return'--';const p=((ac-prec)/Math.abs(prec)*100).toFixed(1);return(p>0?'+':'')+p+'%';}
+function fileToBase64(f){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result.split(',')[1]);r.onerror=rej;r.readAsDataURL(f);});}
+
+async function downloadPDF(){
+  const btn=document.querySelectorAll('.btn-outline')[0];
+  btn.textContent='Generazione PDF...';btn.disabled=true;
+  try{
+    const{jsPDF}=window.jspdf;
+    const el=document.getElementById('rc');
+    // Aspetta un frame per assicurarsi che i canvas siano renderizzati
+    await new Promise(r=>setTimeout(r,300));
+    const canvas=await html2canvas(el,{
+      scale:1.5,
+      useCORS:true,
+      backgroundColor:'#ffffff',
+      logging:false,
+      allowTaint:true,
+      onclone:(doc)=>{
+        // Forza visibilita di tutti gli elementi nel clone
+        doc.querySelectorAll('canvas').forEach(c=>{
+          c.style.display='block';
+          c.style.visibility='visible';
+        });
+        doc.querySelectorAll('.fe-body').forEach(el=>el.style.display='none');
+      }
+    });
+    const pdf=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+    const pw=210,ph=297,ratio=canvas.width/pw;
+    const totalH=canvas.height/ratio;
+    let y=0;
+    while(y<totalH){
+      const sliceH=Math.min(ph,totalH-y);
+      const sc=document.createElement('canvas');
+      sc.width=canvas.width;
+      sc.height=Math.ceil(sliceH*ratio);
+      sc.getContext('2d').drawImage(canvas,0,Math.ceil(y*ratio),canvas.width,Math.ceil(sliceH*ratio),0,0,canvas.width,Math.ceil(sliceH*ratio));
+      if(y>0)pdf.addPage();
+      pdf.addImage(sc.toDataURL('image/jpeg',0.92),'JPEG',0,0,pw,sliceH);
+      y+=ph;
+    }
+    const cn=document.getElementById('rcCliente').textContent.replace(/[^a-zA-Z0-9]/g,'_').substring(0,30);
+    pdf.save('BV_'+cn+'_'+new Date().getFullYear()+'.pdf');
+  }catch(e){alert('Errore PDF: '+e.message);console.error(e);}
+  btn.textContent='Scarica PDF';btn.disabled=false;
+}
+
+function resetApp(){
+  destroyCharts();
+  document.getElementById('reportSection').style.display='none';
+  document.getElementById('setupPanel').style.display='block';
+  document.getElementById('fileInput').value='';
+  selectedFile=null;selectedSector='';
+  document.getElementById('fileChosen').style.display='none';
+  document.getElementById('inAteco').value='';
+  document.getElementById('inCliente').value='';
+  document.getElementById('inPiva').value='';
+  document.getElementById('errorBar').style.display='none';
+  startBtn.disabled=true;
+}
+</script>
+</body>
+</html>
